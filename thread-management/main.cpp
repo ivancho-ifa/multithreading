@@ -1,11 +1,12 @@
 #include <iostream>
 #include <thread>
+#include <string>
 
-void print_message()
+void print_message(const std::string& msg)
 {
 	using std::cout; using std::endl;
 
-	cout << "hi" << endl;
+	cout << msg << endl;
 }
 
 // thread should allways 
@@ -15,13 +16,11 @@ void print_message()
 // this should crash
 void start_local_thread()
 {
-	using std::thread;
-
-	thread t_01(print_message);
+	std::thread t_01(print_message);
 }
-// it crashes
+// confirmed, it crashes
 
-void wait_for_thread(std::thread&& t)
+void wait_for_thread(std::thread& t)
 {
 	// if thread is detached 
 	// thread is not joinable
@@ -34,14 +33,33 @@ void wait_for_thread(std::thread&& t)
 int main()
 {
 	using std::thread;
+	using std::string;
 	using std::cout; using std::endl;
 
-	thread t_01(print_message);
+	string msg = "hi";
+
+	// thread constructor accepts function pointers, functors and lambdas
+	// all arguments that the threaded function accepts are deep copied
+	// else resource management proglems arise
+	// solution for that is std::move
+	thread t_01(print_message, std::move(msg));
 	// threads can not be copied
-	//thread t_02 = std::move(t_02);
+	// use std::move()
 
-	wait_for_thread(std::move(t_01));
+	try
+	{
+		// work for the main thread
+		// can throw exception
+		// then the thread will be destroyed 
+		// before joining or detaching
+		// so catch exception and handle threads
+	}
+	catch (const std::exception&)
+	{
+		wait_for_thread(t_01);
+	}
 
+	wait_for_thread(t_01);
 
 	//start_local_thread();
 	//cout << "exit normally" << endl;
